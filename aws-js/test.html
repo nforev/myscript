@@ -1,0 +1,37 @@
+<html>
+<head>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.767.0.min.js"></script>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="test.js"></script>
+<script src="aws.js"></script>
+<script src="eon.js"></script>
+</head>
+<body>
+	<div id="textToSynth">
+	  <div id="Accesskey">AccessKey:AccessSecret:Region</div>
+      <input autofocus size="23" type="text" id="accesskey" value=""/>
+      <input autofocus size="23" type="text" id="accesssecret" value=""/>
+      <input autofocus size="23" type="text" id="region" value=""/><br>
+      <button class="btn default" id="config" onClick="InputCred()">Configure</button>
+      <button class="btn default" onClick="ShowCred()">Show Credentials</button>
+      <div id="AccessKey"></div>
+	  <div id="AccessSecret"></div>
+    </div>
+
+	<button type="button" id="describe" onclick="describeInstances()">DescribeInstances</button>
+    <button type="button" id="create" onclick="CreateInstance()">CreateInstances</button>
+    <button type="button" id="terminate" onclick="TerminateInstances()">TerminateAllInstances</button>
+    <button type="button" id="buildeon" onclick="buildeon()">buildeon</button>
+    <button type="button" id="destroyeon" onclick="destroyeon()">destroyeon</button>
+    <button type="button" id="test" onclick="testdestroyeon()">test</button>
+    <table id="instancelist">
+        <tr><th>LaunchTime</th><th>InstanceId</th><th>PublicIpAddress</th><th>PrivateIpAddress</th><th>State</th></tr>
+    </table>
+</body>
+<script type="text/javascript">
+t = document.getElementById("instancelist");
+InputCred();
+describeInstances();
+</script>
+
+</html>
