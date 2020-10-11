@@ -51,12 +51,71 @@ function createeoninstance() {
 }
 
 function createRoleFors3() {
+    var iam = new AWS.IAM({ apiVersion: '2010-05-08' });
+    var myPolicy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "ec2.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+            }
+        ]
+    };
+    var createParams = {
+        AssumeRolePolicyDocument: JSON.stringify(myPolicy),
+        RoleName: "rolefors3access",
+        Tags: [
+            {
+                Key: 'Type',
+                Value: 'eon'
+            }
+        ]
+    };
+    var policyParams = {
+        PolicyArn: "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+        RoleName: "rolefors3access"
+    };
+    iam.createRole(createParams, function (err, data) {
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+        } else {
+            console.log("Role ARN is", data.Role.Arn);
+            iam.attachRolePolicy(policyParams, function (err, data) {
+                if (err) {
+                    console.log(err, err.stack);
+                } else {
+                    console.log("s3access Policy attached");
+                }
+            });
+        }
+    });
+}
 
+function deletes3role() {
+    var iam = new AWS.IAM({ apiVersion: '2010-05-08' });
+    var paramdelrole = {
+        RoleName: 'rolefors3access'
+    };
+    var paramdetachrole = {
+        PolicyArn: 'arn:aws:iam::aws:policy/AmazonS3FullAccess', /* required */
+        RoleName: 'rolefors3access' /* required */
+    };
+    iam.detachRolePolicy(paramdetachrole, function (err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else
+            console.log("s3 policy detached!");
+            iam.deleteRole(paramdelrole, function (err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else console.log("Role rolefors3access deleted!");           // successful response
+            });
+    });
 }
 
 function buildeon() {
     $("#buildeon").attr("disabled",true);
-    AwsConfig();
     //1. create vpc
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
     var paramvpc = {
@@ -76,6 +135,7 @@ function buildeon() {
     ec2.createVpc(paramvpc, function(err, datavpc) {
         if (err) {
             console.log(err, err.stack);
+            InvalidCrendentialHandler();
         } else {
             jsonvpc=JSON.parse(JSON.stringify(datavpc));
             console.log("VPC created:", jsonvpc.Vpc.VpcId);
@@ -107,6 +167,7 @@ function buildeon() {
                     }
                 ]
             }
+            createRoleFors3();
             ec2.createSubnet(paramsubnet, function(err,datasubnet){
                 if (err) {
                     console.log(err, err.stack);
@@ -191,7 +252,6 @@ function buildeon() {
 }
 
 function destroyvpc() {
-    AwsConfig();
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
     
     //1. terminate instance    
@@ -232,6 +292,7 @@ function destroyvpc() {
             //            else console.log("Route Table deleted")
             //        });
             //});
+            deletes3role();
             ec2.describeVpcs(params, function(err, datalistvpc) {
                 if (err) console.log(err, err.stack); // an error occurred
                 else     
@@ -311,7 +372,6 @@ function sleep(ms) {
 
 function destroyeon() {
     $("#destroyeon").attr("disabled",true);
-    AwsConfig();
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
     
     var param1 = {
@@ -325,7 +385,8 @@ function destroyeon() {
     
     ec2.describeInstances(param1, function(err, data) {
 	if (err) {
-		console.log("Error", err.stack);
+        console.log("Error", err.stack);
+        InvalidCrendentialHandler();
 	} else {
 		console.log("Success");
 		var json = JSON.parse(JSON.stringify(data));

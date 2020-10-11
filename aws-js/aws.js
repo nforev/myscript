@@ -15,7 +15,7 @@ function describeInstances() {
 	//
 	//AWS.config.credentials = creds;
 	//AWS.config.update({region: Config.region});
-    AwsConfig();
+    //AwsConfig();
 
 	var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
 	
@@ -25,7 +25,8 @@ function describeInstances() {
 // Call EC2 to retrieve policy for selected bucket
 	ec2.describeInstances(params, function(err, data) {
 	if (err) {
-		console.log("Error", err.stack);
+        console.log("Error", err.stack);
+        InvalidCrendentialHandler();
 	} else {
 		console.log("Success");
 		var json = JSON.parse(JSON.stringify(data));
@@ -130,12 +131,12 @@ function CreateInstance() {
             console.log("Created instance", instanceId);
         }).catch(
         function(err) {
-            console.error(err, err.stack);
+                console.error(err, err.stack);
+                InvalidCrendentialHandler();
         });
 }
 
 function TerminateInstances() {
-    AwsConfig();
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
     var param1 = {
         DryRun: false
@@ -146,28 +147,57 @@ function TerminateInstances() {
         DryRun: false   
     };
     
-    ec2.describeInstances(param1, function(err, data) {
-	if (err) {
-		console.log("Error", err.stack);
-	} else {
-		console.log("Success");
-		var json = JSON.parse(JSON.stringify(data));
-		console.log(json.Reservations);
-        for (var i in json.Reservations) {
-			instances = json.Reservations[i].Instances;
-			//document.write(instances[0].InstanceId + "<br>");
-            //inst=JSON.stringify(instances[0].InstanceId);
+    ec2.describeInstances(param1, function (err, data) {
+        if (err) {
+            console.log("Error", err.stack);
+            InvalidCrendentialHandler();
+        } else {
+            console.log("Success");
+            var json = JSON.parse(JSON.stringify(data));
+            console.log(json.Reservations);
+            for (var i in json.Reservations) {
+                instances = json.Reservations[i].Instances;
+                //document.write(instances[0].InstanceId + "<br>");
+                //inst=JSON.stringify(instances[0].InstanceId);
 
-            ids.push(instances[0].InstanceId);
+                ids.push(instances[0].InstanceId);
+            }
         }
-    }
-        
 
-    ec2.terminateInstances(param2, function(err, data) {
-        if (err) console.log(err, err.stack); // an error occurred
-        else     
-            console.log(data);
+
+        ec2.terminateInstances(param2, function (err, data) {
+            if (err) console.log(err, err.stack); // an error occurred
+            else
+                console.log(data);
             describeInstances();
+        });
     });
-    })
+}
+
+function detecteon() {
+    var ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
+    var params = {
+        Filters: [
+            {
+                Name: 'tag:Type',
+                Values: [
+                    'eon'
+                ]
+            }
+        ]
+    };
+    ec2.describeVpcs(params, function (err, datalistvpc) {
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+        } else {
+            console.log(datalistvpc);
+            json = JSON.parse(JSON.stringify(datalistvpc));
+            if (json.Vpcs.length != 0) {
+                alert("Detect eon vpc existing , the buildeon button will be disabled!")
+                $("#buildeon").attr("disabled", true);
+            } else {
+                console.log("No eon vpc detected");
+            }
+        }
+    });
 }
