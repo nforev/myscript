@@ -7,6 +7,21 @@ function AwsConfig() {
 	AWS.config.update({region: Config.region});    
 }
 
+function creates3bucket() {
+    s3 = new AWS.S3({apiVersion: '2006-03-01'});
+    var bucketParams = {
+        Bucket : 'mybucket-zheng-20191223',
+    };
+    
+    // Call S3 to obtain a list of the objects in the bucket
+    s3.listObjects(bucketParams, function(err, data) {
+        if (err) {
+            console.log("Error", err);
+        } else {
+            console.log("Success", data);
+        }
+    });
+}
 
 function describeInstances() {
 	//var creds = new AWS.Credentials({
@@ -93,7 +108,6 @@ function CreateInstance() {
         
         packages:
         - httpd
-        - mariadb-server
         - dialog
         
         runcmd:

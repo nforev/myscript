@@ -7,29 +7,37 @@
 <script src="eon.js"></script>
 </head>
 <body>
-	<div id="textToSynth">
-	  <div id="Accesskey">AccessKey:AccessSecret:Region</div>
-      <input autofocus size="23" type="text" id="accesskey" value=""/>
-      <input autofocus size="23" type="text" id="accesssecret" value=""/>
-      <input autofocus size="23" type="text" id="region" value=""/><br>
-      <button class="btn default" id="config" onClick="InputCred()">Configure</button>
-      <button class="btn default" onClick="ShowCred()">Show Credentials</button>
-      <div id="AccessKey"></div>
-	  <div id="AccessSecret"></div>
+	<div id="ConfigCredential">
+	   <div id="Accesskey">AccessKey:AccessSecret:Region</div>
+        <input autofocus size="23" type="text" id="accesskey" value="AKIAIUWVRHGWXVCTJ32A"/>
+        <input autofocus size="23" type="text" id="accesssecret" value="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"/>
+        <input autofocus size="23" type="text" id="region" value="ap-northeast-2"/><br>
+        <button class="btn default" id="config" onClick="InputCred()">Configure</button>
+        <button class="btn default" onClick="ShowCred()">Show Credentials</button>
+        <div id="AccessKey"></div>
+	   <div id="AccessSecret"></div>
     </div>
-
-	<button type="button" id="describe" onclick="describeInstances()">ShowCurrentInstanceState</button>
-    <button type="button" id="create" onclick="CreateInstance()">CreateInstances</button>
-    <button type="button" id="terminate" onclick="TerminateInstances()">TerminateAllInstances</button>
-    <button type="button" id="buildeon" onclick="buildeon()">buildeon</button>
-    <button type="button" id="destroyeon" onclick="destroyeon()">destroyeon</button>
-    <button type="button" id="test" onclick="deletes3role()">test</button>
-    <table id="instancelist">
-        <tr><th>LaunchTime</th><th>InstanceId</th><th>PublicIpAddress</th><th>PrivateIpAddress</th><th>State</th></tr>
-    </table>
+    <div id="instancestate">
+        <button type="button" id="describe" onclick="describeInstances()">ShowCurrentInstanceState</button>
+        <button type="button" id="create" onclick="CreateVerticaInstance()">CreateInstances</button>
+        <button type="button" id="terminate" onclick="TerminateInstances()">TerminateAllInstances</button>
+        <table id="instancelist">
+            <tr><th>LaunchTime</th><th>InstanceId</th><th>PublicIpAddress</th><th>PrivateIpAddress</th><th>State</th></tr>
+        </table>    
+    </div>
+    <div id="eonoperation">
+        <button type="button" id="buildeon" onclick="buildeon()">buildeon</button>
+        <button type="button" id="destroyeon" onclick="destroyeon()">destroyeon</button>
+        <button type="button" id="test" onclick="creates3bucket()">test</button><br>
+        <input autofocus size="50" type="text" id="s3bucket" value="s3://mybucket-zheng-20191223"/><br>
+        <input autofocus size="50" type="text" id="verticarpm" value="s3://vertica.recovery/vertica-10.0.0-1.x86_64.RHEL6.rpm"/><br>
+        <input autofocus size="50" type="text" id="mcrpm" value="s3://vertica.recovery/vertica-console-10.0.0-1.x86_64.RHEL6.rpm"/><br>
+    </div>
 </body>
 <script type="text/javascript">
 t = document.getElementById("instancelist");
+s3param.verticarpm = document.getElementById("verticarpm").value; 
+s3param.s3bucket = document.getElementById("s3bucket").value;
 //InputCred();
 //describeInstances();
 </script>

@@ -4,6 +4,12 @@ var Config = {
 	region: "",
 };
 
+var s3param = {
+    verticarpm: "",
+    mcrpm: "",
+    s3bucket: "",
+}
+
 function InputCred(){
 	Config.accesskey = document.getElementById("accesskey").value;
 	Config.accesssecret = document.getElementById("accesssecret").value;

@@ -1,26 +1,48 @@
 var subnetid = '';
+var vpcid = '';
+var sgid = '';
+
+   
+var part1 = `#!/bin/bash
+    yum install -y dialog;
+    sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config;
+    sudo systemctl restart sshd;
+    `;
+var part6 = `
+    echo "#test" >> /etc/hosts;
+    sleep 10;
+    sudo rpm -Uvh /tmp/vertica*.rpm;
+    sleep 60;
+    sudo groupadd verticadba;
+    sudo useradd dbadmin -G verticadba -p vertica123;
+    sudo echo "10.100.1.11 vertica01" >> /etc/hosts;
+    sudo echo "10.100.1.12 vertica02" >> /etc/hosts;
+    sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
+    sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
+    su - dbadmin -p vertica -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user-password password --ssh-password vertica --license CE --accept-eula";
+    `;
+var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
+    
+var verticauserData=part1 + s3cmd + part6;
+var verticauserDataEncoded = btoa(verticauserData);
+// AMI is amzn-ami-2011.09.1.x86_64-ebs
+
 
 function createeoninstance() {
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
-    var userData=`#cloud-config        
-        packages:
-        - httpd
-        - mariadb-server
-        - dialog
-        `
-
-    var userDataEncoded = btoa(userData);
-    // AMI is amzn-ami-2011.09.1.x86_64-ebs
-    var instanceParams = {
+    var instanceParams1 = {
         ImageId: 'ami-01288945bd24ed49a', 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
-        KeyName: 'home_key_seoul',
+        KeyName: 'mykey_seoul',
         MinCount: 1,
         MaxCount: 1,
         //SecurityGroupIds: ["sg-e6c67b86"],
-        UserData: userDataEncoded,
+        UserData: verticauserDataEncoded,
         SubnetId: subnetid,
+        IamInstanceProfile: {
+          Name: 'ec2s3full'
+        },
         TagSpecifications: [
             {
                 ResourceType: 'instance',
@@ -31,8 +53,131 @@ function createeoninstance() {
                     }
                 ]
             }
-        ]
+        ],
+        PrivateIpAddress: '10.100.1.11',
         
+    };
+    
+    var instanceParams2 = {
+        ImageId: 'ami-01288945bd24ed49a', 
+        //ImageId: 'ami-05dbc2395794a5a52', 
+        InstanceType: 't2.micro',
+        KeyName: 'mykey_seoul',
+        MinCount: 1,
+        MaxCount: 1,
+        //SecurityGroupIds: ["sg-e6c67b86"],
+        UserData: verticauserDataEncoded,
+        SubnetId: subnetid,
+        IamInstanceProfile: {
+          Name: 'ec2s3full'
+        },
+        TagSpecifications: [
+            {
+                ResourceType: 'instance',
+                Tags: [
+                    {
+                        Key: 'Type',
+                        Value: 'eon'
+                    }
+                ]
+            }
+        ],
+        PrivateIpAddress: '10.100.1.12',
+        
+    };
+    
+    var instanceParams3 = {
+        ImageId: 'ami-01288945bd24ed49a', 
+        //ImageId: 'ami-05dbc2395794a5a52', 
+        InstanceType: 't2.micro',
+        KeyName: 'mykey_seoul',
+        MinCount: 1,
+        MaxCount: 1,
+        //SecurityGroupIds: ["sg-e6c67b86"],
+        UserData: verticauserDataEncoded,
+        SubnetId: subnetid,
+        IamInstanceProfile: {
+          Name: 'ec2s3full'
+        },
+        TagSpecifications: [
+            {
+                ResourceType: 'instance',
+                Tags: [
+                    {
+                        Key: 'Type',
+                        Value: 'eon'
+                    }
+                ]
+            }
+        ],
+        PrivateIpAddress: '10.100.1.13',
+        
+    };
+    
+    // Create a promise on an EC2 service object
+    var instancePromise1 = new AWS.EC2({apiVersion: '2016-11-15'}).runInstances(instanceParams1).promise();
+    var instancePromise2 = new AWS.EC2({apiVersion: '2016-11-15'}).runInstances(instanceParams2).promise();
+    var instancePromise3 = new AWS.EC2({apiVersion: '2016-11-15'}).runInstances(instanceParams3).promise();
+    
+    // Handle promise's fulfilled/rejected states
+    instancePromise1.then(
+        function(data) {
+            console.log(data);
+            var instanceId = data.Instances[0].InstanceId;
+            console.log("Created instance", instanceId);
+        }).catch(
+        function(err) {
+            console.error(err, err.stack);
+        });
+    instancePromise2.then(
+        function(data) {
+            console.log(data);
+            var instanceId = data.Instances[0].InstanceId;
+            console.log("Created instance", instanceId);
+        }).catch(
+        function(err) {
+            console.error(err, err.stack);
+        });
+    instancePromise3.then(
+        function(data) {
+            console.log(data);
+            var instanceId = data.Instances[0].InstanceId;
+            console.log("Created instance", instanceId);
+        }).catch(
+        function(err) {
+            console.error(err, err.stack);
+        });
+}
+
+function CreateVerticaInstance() {
+    AwsConfig();
+    var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
+    s3param.verticarpm = document.getElementById("verticarpm").value;    
+    var part1 = `#!/bin/bash
+        yum install -y dialog;
+        `;
+    var part6 = `
+        echo "#test" >> /etc/hosts;
+        sudo rpm -Uvh /tmp/vertica*.rpm;
+        `;
+    var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
+        
+    var userData=part1 + s3cmd + part6;
+
+    var userDataEncoded = btoa(userData);
+    // AMI is amzn-ami-2011.09.1.x86_64-ebs
+    var instanceParams = {
+        ImageId: 'ami-01288945bd24ed49a', 
+        //ImageId: 'ami-05dbc2395794a5a52', 
+        InstanceType: 't2.micro',
+        KeyName: 'mykey_seoul',
+        MinCount: 1,
+        MaxCount: 1,
+        SecurityGroupIds: ["sg-e6c67b86"],
+        UserData: userDataEncoded,
+        IamInstanceProfile: {
+          Name: 'ec2s3full'
+        },
     };
     
     // Create a promise on an EC2 service object
@@ -46,7 +191,8 @@ function createeoninstance() {
             console.log("Created instance", instanceId);
         }).catch(
         function(err) {
-            console.error(err, err.stack);
+                console.error(err, err.stack);
+                InvalidCrendentialHandler();
         });
 }
 
@@ -114,6 +260,55 @@ function deletes3role() {
     });
 }
 
+function createsg() {
+    var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
+    var paramsg = {
+        Description: "SG for eon vpc",
+        GroupName: 'sgforeon',
+        VpcId: vpcid,
+        TagSpecifications: [
+            {
+                ResourceType: 'security-group',
+                Tags: [
+                    {
+                        Key: 'Type',
+                        Value: 'eon'
+                    }
+                ]
+            }
+        ]
+    };
+    ec2.createSecurityGroup(paramsg, function(err, datasg) {
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+        } else {
+            console.log("SG created!");
+            jsonsg=JSON.parse(JSON.stringify(datasg));
+            sgid = jsonsg.GroupId;
+        }
+    });
+    //var paramapplyrule = {
+    //    GroupId: "sg-903004f8", 
+    //    IpPermissions: [
+    //        {
+    //            FromPort: 22, 
+    //            IpProtocol: "tcp", 
+    //            IpRanges: [
+    //                {
+    //                    CidrIp: "203.0.113.0/24", 
+    //                    Description: "SSH access from the LA office"
+    //                }
+    //            ], 
+    //            ToPort: 22
+    //        }
+    //    ]
+    //};
+    //ec2.authorizeSecurityGroupIngress(params, function(err, data) {
+    //    if (err) console.log(err, err.stack); // an error occurred
+    //    else     console.log(data);           // successful response
+    //});
+}
+
 function buildeon() {
     $("#buildeon").attr("disabled",true);
     //1. create vpc
@@ -140,7 +335,8 @@ function buildeon() {
             jsonvpc=JSON.parse(JSON.stringify(datavpc));
             console.log("VPC created:", jsonvpc.Vpc.VpcId);
             console.log(jsonvpc);
-            var vpcid = jsonvpc.Vpc.VpcId;
+            vpcid = jsonvpc.Vpc.VpcId;
+            createsg();
             var paramslistrb = {
                 Filters: [
                     {
@@ -186,7 +382,7 @@ function buildeon() {
                         if (err) console.log(err, err.stack); // an error occurred
                         else     console.log("Enable auto-assign public ip address!");           // successful response
                     });
-                    createeoninstance();
+                    //createeoninstance();
                 }
             });
             var paramcreateigw = {
@@ -361,7 +557,7 @@ function destroyvpc() {
 }
 
 async function waitinginstanceterminated() {
-  await sleep(100000);
+  //await sleep(20000);
   destroyvpc();
 }
 
