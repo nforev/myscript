@@ -19,7 +19,7 @@ var part6 = `
     sudo echo "10.100.1.12 vertica02" >> /etc/hosts;
     sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
     sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
-    su - dbadmin -p vertica -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user-password password --ssh-password vertica --license CE --accept-eula";
+    su - dbadmin -p vertica -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user-password password --ssh-password vertica123 --license CE --accept-eula";
     `;
 var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
     
@@ -37,11 +37,11 @@ function createeoninstance() {
         KeyName: 'mykey_seoul',
         MinCount: 1,
         MaxCount: 1,
-        //SecurityGroupIds: ["sg-e6c67b86"],
+        SecurityGroupIds: [sgid],
         UserData: verticauserDataEncoded,
         SubnetId: subnetid,
         IamInstanceProfile: {
-          Name: 'ec2s3full'
+            Name: 'rolefors3access'
         },
         TagSpecifications: [
             {
@@ -65,11 +65,11 @@ function createeoninstance() {
         KeyName: 'mykey_seoul',
         MinCount: 1,
         MaxCount: 1,
-        //SecurityGroupIds: ["sg-e6c67b86"],
+        SecurityGroupIds: [sgid],
         UserData: verticauserDataEncoded,
         SubnetId: subnetid,
         IamInstanceProfile: {
-          Name: 'ec2s3full'
+            Name: 'rolefors3access'
         },
         TagSpecifications: [
             {
@@ -93,11 +93,11 @@ function createeoninstance() {
         KeyName: 'mykey_seoul',
         MinCount: 1,
         MaxCount: 1,
-        //SecurityGroupIds: ["sg-e6c67b86"],
+        SecurityGroupIds: [sgid],
         UserData: verticauserDataEncoded,
         SubnetId: subnetid,
         IamInstanceProfile: {
-          Name: 'ec2s3full'
+            Name: 'rolefors3access'
         },
         TagSpecifications: [
             {
@@ -176,8 +176,9 @@ function CreateVerticaInstance() {
         SecurityGroupIds: ["sg-e6c67b86"],
         UserData: userDataEncoded,
         IamInstanceProfile: {
-          Name: 'ec2s3full'
+            Name: 'rolefors3access'
         },
+        SubnetId: "subnet-23f03648"
     };
     
     // Create a promise on an EC2 service object
@@ -224,20 +225,38 @@ function createRoleFors3() {
         PolicyArn: "arn:aws:iam::aws:policy/AmazonS3FullAccess",
         RoleName: "rolefors3access"
     };
-    iam.createRole(createParams, function (err, data) {
-        if (err) {
-            console.log(err, err.stack); // an error occurred
-        } else {
-            console.log("Role ARN is", data.Role.Arn);
-            iam.attachRolePolicy(policyParams, function (err, data) {
+    var paramip = {
+        InstanceProfileName: "rolefors3access"
+    };
+    var paramaddip = {
+        InstanceProfileName: "rolefors3access",
+        RoleName: "rolefors3access"
+    }
+    iam.createInstanceProfile(paramip, function (err, dataip) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else
+            console.log("Create instance profile");           // successful response
+            iam.createRole(createParams, function (err, data) {
                 if (err) {
-                    console.log(err, err.stack);
+                    console.log(err, err.stack); // an error occurred
                 } else {
-                    console.log("s3access Policy attached");
+                    console.log("Role ARN is", data.Role.Arn);
+                    iam.attachRolePolicy(policyParams, function (err, data) {
+                        if (err) {
+                            console.log(err, err.stack);
+                        } else {
+                            console.log("s3access Policy attached");
+                            iam.addRoleToInstanceProfile(paramaddip, function (err, data) {
+                                if (err) console.log(err, err.stack); // an error occurred
+                                else console.log("Add instance profile to role");           // successful response
+                            });
+                        }
+                    });
+
                 }
             });
-        }
     });
+
 }
 
 function deletes3role() {
@@ -249,15 +268,33 @@ function deletes3role() {
         PolicyArn: 'arn:aws:iam::aws:policy/AmazonS3FullAccess', /* required */
         RoleName: 'rolefors3access' /* required */
     };
-    iam.detachRolePolicy(paramdetachrole, function (err, data) {
+    var paramdelip = {
+        InstanceProfileName: "rolefors3access"
+    };
+    var paramremoveip = {
+        InstanceProfileName: "rolefors3access",
+        RoleName: "rolefors3access"
+    }
+    iam.removeRoleFromInstanceProfile(paramremoveip, function (err, data) {
         if (err) console.log(err, err.stack); // an error occurred
         else
-            console.log("s3 policy detached!");
-            iam.deleteRole(paramdelrole, function (err, data) {
+            console.log("remove instance profile from role!");           // successful response
+            iam.deleteInstanceProfile(paramdelip, function (err, data) {
                 if (err) console.log(err, err.stack); // an error occurred
-                else console.log("Role rolefors3access deleted!");           // successful response
+                else
+                    console.log("delete instance profile");           // successful response
+                    iam.detachRolePolicy(paramdetachrole, function (err, data) {
+                        if (err) console.log(err, err.stack); // an error occurred
+                        else
+                            console.log("s3 policy detached!");
+                            iam.deleteRole(paramdelrole, function (err, data) {
+                                if (err) console.log(err, err.stack); // an error occurred
+                                else console.log("Role rolefors3access deleted!");           // successful response
+                            });
+                    });
             });
     });
+
 }
 
 function createsg() {
@@ -285,34 +322,72 @@ function createsg() {
             console.log("SG created!");
             jsonsg=JSON.parse(JSON.stringify(datasg));
             sgid = jsonsg.GroupId;
+            var paramapplyrule = {
+                GroupId: sgid,
+                IpProtocol: '-1',
+                CidrIp: '0.0.0.0/0',
+                //IpPermissions: [
+                //    {
+                //        FromPort: 22,
+                //        IpProtocol: "tcp",
+                //        IpRanges: [
+                //            {
+                //                CidrIp: "0.0.0.0/0",
+                //                Description: "SSH access from the LA office"
+                //            }
+                //        ],
+                //        ToPort: 22
+                //    }
+                //]
+            };
+            ec2.authorizeSecurityGroupIngress(paramapplyrule, function (err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else console.log("Ingress rule applied!");           // successful response
+            });
         }
     });
-    //var paramapplyrule = {
-    //    GroupId: "sg-903004f8", 
-    //    IpPermissions: [
-    //        {
-    //            FromPort: 22, 
-    //            IpProtocol: "tcp", 
-    //            IpRanges: [
-    //                {
-    //                    CidrIp: "203.0.113.0/24", 
-    //                    Description: "SSH access from the LA office"
-    //                }
-    //            ], 
-    //            ToPort: 22
-    //        }
-    //    ]
-    //};
-    //ec2.authorizeSecurityGroupIngress(params, function(err, data) {
-    //    if (err) console.log(err, err.stack); // an error occurred
-    //    else     console.log(data);           // successful response
-    //});
+}
+
+function deletesg() {
+    var ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
+    var paramlssg = {
+        Filters: [
+            {
+                Name: 'tag:Type',
+                Values: [
+                    'eon'
+                ]
+            }
+        ]
+    }
+    ec2.describeSecurityGroups(paramlssg, function (err, datalssg) {
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+        } else {
+            jsonlssg = JSON.parse(JSON.stringify(datalssg));
+            var sgiddel = jsonlssg.SecurityGroups[0].GroupId;
+            var paramdelsg = {
+                GroupId: sgiddel
+            };
+            ec2.deleteSecurityGroup(paramdelsg, function (err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else console.log("SG deleted!");           // successful response
+            });
+        } 
+    });
+
+}
+
+async function createeon() {
+    createRoleFors3();
+    await sleep(10000);
+    buildeon();
 }
 
 function buildeon() {
     $("#buildeon").attr("disabled",true);
     //1. create vpc
-    var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
+    var ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
     var paramvpc = {
         CidrBlock: '10.100.0.0/16',
         TagSpecifications: [
@@ -347,7 +422,7 @@ function buildeon() {
                     }
                 ]
             };
-            var paramsubnet={
+            var paramsubnet = {
                 CidrBlock: "10.100.1.0/24",
                 VpcId: vpcid,
                 AvailabilityZone: 'ap-northeast-2a',
@@ -362,8 +437,7 @@ function buildeon() {
                         ]
                     }
                 ]
-            }
-            createRoleFors3();
+            };
             ec2.createSubnet(paramsubnet, function(err,datasubnet){
                 if (err) {
                     console.log(err, err.stack);
@@ -380,9 +454,9 @@ function buildeon() {
                     };
                     ec2.modifySubnetAttribute(parammodifysubnet, function(err, data) {
                         if (err) console.log(err, err.stack); // an error occurred
-                        else     console.log("Enable auto-assign public ip address!");           // successful response
+                        else
+                            console.log("Enable auto-assign public ip address!");           // successful response
                     });
-                    //createeoninstance();
                 }
             });
             var paramcreateigw = {
@@ -427,8 +501,13 @@ function buildeon() {
                                       
                                   };
                                   ec2.createRoute(paramcreateroute, function(err, data) {
-                                      if (err) console.log(err, err.stack);
-                                      else     console.log("Route Created");
+                                      if (err) {
+                                          console.log(err, err.stack);
+                                      } else {
+                                          console.log("Route Created");
+                                          createeoninstance();
+                                      }
+
                                   });
                               }   
                           });
@@ -462,6 +541,7 @@ function destroyvpc() {
             }
         ]
     };
+    deletesg();
     ec2.describeSubnets(params, function(err, datalistsubnet) {
         if (err) console.log(err, err.stack); // an error occurred
         else
@@ -557,7 +637,7 @@ function destroyvpc() {
 }
 
 async function waitinginstanceterminated() {
-  //await sleep(20000);
+  await sleep(60000);
   destroyvpc();
 }
 
