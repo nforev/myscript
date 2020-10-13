@@ -3,33 +3,51 @@ var vpcid = '';
 var sgid = '';
 
    
-var part1 = `#!/bin/bash
-    yum install -y dialog;
-    sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config;
-    sudo systemctl restart sshd;
-    `;
-var part6 = `
-    echo "#test" >> /etc/hosts;
-    sleep 10;
-    sudo rpm -Uvh /tmp/vertica*.rpm;
-    sleep 60;
-    sudo groupadd verticadba;
-    sudo useradd dbadmin -G verticadba -p vertica123;
-    sudo echo "10.100.1.11 vertica01" >> /etc/hosts;
-    sudo echo "10.100.1.12 vertica02" >> /etc/hosts;
-    sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
-    sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
-    su - dbadmin -p vertica -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user-password password --ssh-password vertica123 --license CE --accept-eula";
-    `;
-var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
-    
-var verticauserData=part1 + s3cmd + part6;
-var verticauserDataEncoded = btoa(verticauserData);
+
 // AMI is amzn-ami-2011.09.1.x86_64-ebs
 
 
 function createeoninstance() {
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
+    var part1 = `#!/bin/bash
+        yum install -y dialog;
+        sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config;
+        sudo systemctl restart sshd;
+        `;
+    var part2 = `
+        echo "#add vertica hosts" >> /etc/hosts;
+        sleep 10;
+        sudo rpm -Uvh /tmp/vertica*.rpm;
+        sudo groupadd verticadba;
+        sudo useradd dbadmin -G verticadba;
+        sudo echo vertica123 | passwd --stdin dbadmin;
+        sudo echo "10.100.1.11 vertica01" >> /etc/hosts;
+        sudo echo "10.100.1.12 vertica02" >> /etc/hosts;
+        sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
+        sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
+        sleep 30;
+        echo vertica123 | su - dbadmin -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user-password password --ssh-password vertica123 --license CE --accept-eula";        
+        `;
+    var part3 = `
+        echo "#add vertica hosts" >> /etc/hosts;
+        sleep 10;
+        sudo rpm -Uvh /tmp/vertica*.rpm;
+        sudo groupadd verticadba;
+        sudo useradd dbadmin -G verticadba;
+        sudo echo vertica123 | passwd --stdin dbadmin;
+        sudo echo "10.100.1.11 vertica01" >> /etc/hosts;
+        sudo echo "10.100.1.12 vertica02" >> /etc/hosts;
+        sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
+        sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;  
+        `;
+
+    
+    var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
+    
+    var verticauserData1=part1 + s3cmd + part2;
+    var verticauserData2=part1 + s3cmd + part3;
+    var verticauserDataEncoded1 = btoa(verticauserData1);
+    var verticauserDataEncoded2 = btoa(verticauserData2);
     var instanceParams1 = {
         ImageId: 'ami-01288945bd24ed49a', 
         //ImageId: 'ami-05dbc2395794a5a52', 
@@ -38,7 +56,7 @@ function createeoninstance() {
         MinCount: 1,
         MaxCount: 1,
         SecurityGroupIds: [sgid],
-        UserData: verticauserDataEncoded,
+        UserData: verticauserDataEncoded1,
         SubnetId: subnetid,
         IamInstanceProfile: {
             Name: 'rolefors3access'
@@ -66,7 +84,7 @@ function createeoninstance() {
         MinCount: 1,
         MaxCount: 1,
         SecurityGroupIds: [sgid],
-        UserData: verticauserDataEncoded,
+        UserData: verticauserDataEncoded2,
         SubnetId: subnetid,
         IamInstanceProfile: {
             Name: 'rolefors3access'
@@ -94,7 +112,7 @@ function createeoninstance() {
         MinCount: 1,
         MaxCount: 1,
         SecurityGroupIds: [sgid],
-        UserData: verticauserDataEncoded,
+        UserData: verticauserDataEncoded2,
         SubnetId: subnetid,
         IamInstanceProfile: {
             Name: 'rolefors3access'
@@ -379,13 +397,14 @@ function deletesg() {
 }
 
 async function createeon() {
+    $("#buildeon").attr("disabled",true);
     createRoleFors3();
     await sleep(10000);
     buildeon();
 }
 
 function buildeon() {
-    $("#buildeon").attr("disabled",true);
+    
     //1. create vpc
     var ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
     var paramvpc = {
