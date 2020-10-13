@@ -43,7 +43,6 @@ function describeInstances() {
         console.log("Error", err.stack);
         InvalidCrendentialHandler();
 	} else {
-		console.log("Success");
 		var json = JSON.parse(JSON.stringify(data));
 		console.log(json.Reservations);
         if (document.getElementById("instancelist")) {

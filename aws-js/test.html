@@ -32,12 +32,14 @@
         <input autofocus size="50" type="text" id="s3bucket" value="s3://mybucket-zheng-20191223"/><br>
         <input autofocus size="50" type="text" id="verticarpm" value="s3://vertica.recovery/vertica-10.0.0-1.x86_64.RHEL6.rpm"/><br>
         <input autofocus size="50" type="text" id="mcrpm" value="s3://vertica.recovery/vertica-console-10.0.0-1.x86_64.RHEL6.rpm"/><br>
+        <input autofocus size="50" type="text" id="keypair" value="mykey_seoul"/><br>
     </div>
 </body>
 <script type="text/javascript">
 t = document.getElementById("instancelist");
 s3param.verticarpm = document.getElementById("verticarpm").value; 
 s3param.s3bucket = document.getElementById("s3bucket").value;
+Config.keypair = document.getElementById("keypair").value;
 //InputCred();
 //describeInstances();
 </script>

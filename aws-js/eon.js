@@ -49,10 +49,10 @@ function createeoninstance() {
     var verticauserDataEncoded1 = btoa(verticauserData1);
     var verticauserDataEncoded2 = btoa(verticauserData2);
     var instanceParams1 = {
-        ImageId: 'ami-01288945bd24ed49a', 
+        ImageId: 'ami-03b42693dc6a7dc35', 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
-        KeyName: 'mykey_seoul',
+        KeyName: Config.keypair,
         MinCount: 1,
         MaxCount: 1,
         SecurityGroupIds: [sgid],
@@ -77,10 +77,10 @@ function createeoninstance() {
     };
     
     var instanceParams2 = {
-        ImageId: 'ami-01288945bd24ed49a', 
+        ImageId: 'ami-03b42693dc6a7dc35', 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
-        KeyName: 'mykey_seoul',
+        KeyName: Config.keypair,
         MinCount: 1,
         MaxCount: 1,
         SecurityGroupIds: [sgid],
@@ -105,10 +105,10 @@ function createeoninstance() {
     };
     
     var instanceParams3 = {
-        ImageId: 'ami-01288945bd24ed49a', 
+        ImageId: 'ami-03b42693dc6a7dc35', 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
-        KeyName: 'mykey_seoul',
+        KeyName: Config.keypair,
         MinCount: 1,
         MaxCount: 1,
         SecurityGroupIds: [sgid],
@@ -397,10 +397,11 @@ function deletesg() {
 }
 
 async function createeon() {
-    $("#buildeon").attr("disabled",true);
+    $("#buildeon").attr("disabled", true);
     createRoleFors3();
     await sleep(10000);
     buildeon();
+    await sleep(1000);
 }
 
 function buildeon() {
@@ -444,7 +445,7 @@ function buildeon() {
             var paramsubnet = {
                 CidrBlock: "10.100.1.0/24",
                 VpcId: vpcid,
-                AvailabilityZone: 'ap-northeast-2a',
+                AvailabilityZone: Config.az,
                 TagSpecifications: [
                     {
                         ResourceType: 'subnet',
@@ -623,7 +624,8 @@ function destroyvpc() {
                                             if (err) console.log(err, err.stack);
                                             else console.log("vpc deleted");
                                             $("#destroyeon").attr("disabled",false);
-                                            $("#buildeon").attr("disabled",false);
+                                            $("#buildeon").attr("disabled", false);
+                                            alert("The eon environment has been removed!")
                                         });
                                 });
                         });
@@ -656,12 +658,14 @@ function destroyvpc() {
 }
 
 async function waitinginstanceterminated() {
-  await sleep(60000);
-  destroyvpc();
+    alert("Please do not close this page, until next pop up messsage!")
+    await sleep(60000);
+    destroyvpc();
+
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+    return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 
@@ -683,7 +687,6 @@ function destroyeon() {
         console.log("Error", err.stack);
         InvalidCrendentialHandler();
 	} else {
-		console.log("Success");
 		var json = JSON.parse(JSON.stringify(data));
 		console.log(json.Reservations);
         for (var i in json.Reservations) {
