@@ -4,6 +4,7 @@ var Config = {
 	region: "",
 	az: "",
 	keypair: "",
+    amiid: "",
 };
 
 var s3param = {
@@ -17,7 +18,10 @@ function InputCred(){
 	Config.accesssecret = document.getElementById("accesssecret").value;
 	Config.region = document.getElementById("region").value;
 	switch (Config.region) {
-		//case "us-east-1":
+		case "us-east-1":
+            Config.az = 'us-east-1a';
+            Config.amiid = 'ami-0947d2ba12ee1ff75';
+            break;
 		//case "us-east-2":
 		//case "us-west-1":
 		//case "us-west-2":
@@ -27,6 +31,7 @@ function InputCred(){
 		//case "ap-northeast-1":
 		case "ap-northeast-2":
 			Config.az = 'ap-northeast-2a';
+            Config.amiid = 'ami-03b42693dc6a7dc35';
 			break;
 		//case "ap-southeast-1":
 		//case "ap-southeast-2":
@@ -54,25 +59,4 @@ function ShowCred(){
 
 function InvalidCrendentialHandler() {
 	alert("The provided Credential is invalid!");
-}
-
-function handleButton(elem) {
-	switch (elem.id) {
-		case "0":
-			rockSamples++;
-			document.getElementById("rocksamples").innerText = "Rock samples:" + rockSamples;
-			break;
-		case "1":
-			paperSamples++;
-			document.getElementById("papersamples").innerText = "Paper samples:" + paperSamples;
-			break;
-		case "2":
-			scissorsSamples++;
-			document.getElementById("scissorssamples").innerText = "Scissors samples:" + scissorsSamples;
-			break;
-	}
-	label = parseInt(elem.id);
-	const img = webcam.capture();
-	dataset.addExample(mobilenet.predict(img), label);
-
 }

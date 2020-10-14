@@ -13,11 +13,8 @@ function createeoninstance() {
         yum install -y dialog;
         sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config;
         sudo systemctl restart sshd;
-        `;
-    var part2 = `
-        echo "#add vertica hosts" >> /etc/hosts;
-        sleep 10;
-        sudo rpm -Uvh /tmp/vertica*.rpm;
+        sudo mkdir -p /tmp/verticainstall/;
+        echo "#add vertica hosts" >> /etc/hosts;        
         sudo groupadd verticadba;
         sudo useradd dbadmin -G verticadba;
         sudo echo vertica123 | passwd --stdin dbadmin;
@@ -25,31 +22,30 @@ function createeoninstance() {
         sudo echo "10.100.1.12 vertica02" >> /etc/hosts;
         sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
         sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
-        sleep 30;
-        echo vertica123 | su - dbadmin -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user-password password --ssh-password vertica123 --license CE --accept-eula";        
         `;
-    var part3 = `
-        echo "#add vertica hosts" >> /etc/hosts;
+    var part2 = `
         sleep 10;
         sudo rpm -Uvh /tmp/vertica*.rpm;
-        sudo groupadd verticadba;
-        sudo useradd dbadmin -G verticadba;
-        sudo echo vertica123 | passwd --stdin dbadmin;
-        sudo echo "10.100.1.11 vertica01" >> /etc/hosts;
-        sudo echo "10.100.1.12 vertica02" >> /etc/hosts;
-        sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
-        sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;  
+        sleep 30;
+        echo vertica123 | su - dbadmin -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user dbadmin --dba-user-password password --ssh-password vertica123 --license CE --accept-eula" > /tmp/verticainstall/install_cluster.log;
+        sleep 10;
+        `;
+    var part3 = `
+        sleep 10;
+        sudo rpm -Uvh /tmp/vertica*.rpm;
         `;
 
     
     var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
+    var cleans3 = "sudo aws s3 rm " + s3param.s3bucket + " --recrusive > /tmp/verticainstall/rm_s3.log;"
+    var installvertica = 'echo vertica123 | su - dbadmin -c "admintools -t create_db --communal-storage-location=' + s3param.s3bucket + ' -s vertica01,vertica02,vertica03 -d test_eon -p password --depot-path /home/dbadmin/ --shard-count=6" > /tmp/verticainstall/install_vertica.log;'
     
-    var verticauserData1=part1 + s3cmd + part2;
+    var verticauserData1=part1 + cleans3 + s3cmd + part2 + installvertica;
     var verticauserData2=part1 + s3cmd + part3;
     var verticauserDataEncoded1 = btoa(verticauserData1);
     var verticauserDataEncoded2 = btoa(verticauserData2);
     var instanceParams1 = {
-        ImageId: 'ami-03b42693dc6a7dc35', 
+        ImageId: Config.amiid, 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
         KeyName: Config.keypair,
@@ -77,7 +73,7 @@ function createeoninstance() {
     };
     
     var instanceParams2 = {
-        ImageId: 'ami-03b42693dc6a7dc35', 
+        ImageId: Config.amiid, 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
         KeyName: Config.keypair,
@@ -105,7 +101,7 @@ function createeoninstance() {
     };
     
     var instanceParams3 = {
-        ImageId: 'ami-03b42693dc6a7dc35', 
+        ImageId: Config.amiid, 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
         KeyName: Config.keypair,
@@ -561,7 +557,6 @@ function destroyvpc() {
             }
         ]
     };
-    deletesg();
     ec2.describeSubnets(params, function(err, datalistsubnet) {
         if (err) console.log(err, err.stack); // an error occurred
         else
@@ -660,6 +655,8 @@ function destroyvpc() {
 async function waitinginstanceterminated() {
     alert("Please do not close this page, until next pop up messsage!")
     await sleep(60000);
+    deletesg();
+    await sleep(5000);
     destroyvpc();
 
 }

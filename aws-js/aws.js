@@ -93,7 +93,7 @@ function describeInstances() {
 			//document.body.appendChild(privateip);
 			//document.body.style.backgroundColor = "yellow";
 		}
-        document.body.appendChild(t);
+        //document.body.appendChild(t);
 	}
 	});
 }
