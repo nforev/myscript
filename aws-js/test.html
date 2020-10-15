@@ -10,20 +10,22 @@
 <body>
     <div class="header" style="background-color:black;">
         <img id="verticalogo" src="vertica_logo.png">
-        <h2 id='toolname' style="color: white">Vertica EON Building Tool</h3>
+        <h2 id='toolname' style="color: white">EON Building Tool</h3>
     </div>
     <div class="topnav">
-        <a href="#">README</a>
+        <a href="test.html">MAINPAGE</a>
+        <a href="readme.html">README</a>
+        <a href="https://www.vertica.com/documentation/vertica/10-0-x-documentation/" style="float:right">VERTICA</a>
     </div>
 	<div id="ConfigCredential" style="background-color:ghostwhite;height:700px;width:350px;float:left;">
 	   <h4 id="Accesskey">Input your Credential here:</h4>
         <p>
         Access Key:    <br>
-        <input autofocus size="23" type="text" id="accesskey" value="AKIAI2HSXYM232WQFVOA"/><br>
+        <input autofocus size="40" type="text" id="accesskey" value="AKIAI2HSXYM232WQFVOA"/><br>
         Access Secret: <br>
-        <input autofocus size="23" type="text" id="accesssecret" value="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"/><br>
+        <input autofocus size="40" type="text" id="accesssecret" value="pcPPd7JdQ2NNK1Ow9VC7YkAvFmAHmPM060DtXpZ8"/><br>
         Region: <br>
-        <input autofocus size="23" type="text" id="region" value="ap-northeast-2"/><br>
+        <input autofocus size="40" type="text" id="region" value="ap-northeast-2"/><br>
         <button class="btn default" id="config" onClick="InputCred()">Configure</button>
         <button class="btn default" onClick="ShowCred()">Show Credentials</button>
         </p>
@@ -38,7 +40,7 @@
         Veritca rpm path:<br>
         <input autofocus size="40" type="text" id="verticarpm" value="s3://vertica.recovery/vertica-10.0.0-1.x86_64.RHEL6.rpm"/><br>
         AWS key pair Name:<br>
-        <input autofocus size="40" type="text" id="keypair" value="mykey_seoul"/><br>
+        <input autofocus size="40" type="text" id="keypair" value=""/><br>
         <button type="button" id="buildeon" onclick="createeon()">buildeon</button>
         <button type="button" id="destroyeon" onclick="destroyeon()">destroyeon</button>
         <button type="button" id="test" onclick="createeon()">test</button><br>
@@ -61,7 +63,6 @@
 t = document.getElementById("instancelist");
 s3param.verticarpm = document.getElementById("verticarpm").value; 
 s3param.s3bucket = document.getElementById("s3bucket").value;
-Config.keypair = document.getElementById("keypair").value;
 //InputCred();
 //describeInstances();
 </script>

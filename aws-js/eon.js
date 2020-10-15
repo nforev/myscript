@@ -37,7 +37,7 @@ function createeoninstance() {
 
     
     var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
-    var cleans3 = "sudo aws s3 rm " + s3param.s3bucket + " --recrusive > /tmp/verticainstall/rm_s3.log;"
+    var cleans3 = "sudo aws s3 rm " + s3param.s3bucket + " --recursive > /tmp/verticainstall/rm_s3.log;"
     var installvertica = 'echo vertica123 | su - dbadmin -c "admintools -t create_db --communal-storage-location=' + s3param.s3bucket + ' -s vertica01,vertica02,vertica03 -d test_eon -p password --depot-path /home/dbadmin/ --shard-count=6" > /tmp/verticainstall/install_vertica.log;'
     
     var verticauserData1=part1 + cleans3 + s3cmd + part2 + installvertica;
@@ -394,6 +394,7 @@ function deletesg() {
 
 async function createeon() {
     $("#buildeon").attr("disabled", true);
+    Config.keypair=document.getElementById("keypair").value;
     createRoleFors3();
     await sleep(10000);
     buildeon();
