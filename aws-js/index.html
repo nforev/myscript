@@ -1,0 +1,69 @@
+<html>
+<head>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.767.0.min.js"></script>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="func.js"></script>
+<script src="aws.js"></script>
+<script src="eon.js"></script>
+<link rel="stylesheet" type="text/css" href="mystyle.css">
+</head>
+<body>
+    <div class="header" style="background-color:black;">
+        <img id="verticalogo" src="vertica_logo.png">
+        <h2 id='toolname' style="color: white">EON Building Tool</h3>
+    </div>
+    <div class="topnav" id="nav">
+        <a href="index.html">TOOL</a>
+        <a href="readme.html">README</a>
+        <a href="https://www.vertica.com/documentation/vertica/10-0-x-documentation/" style="float:right">VERTICA</a>
+    </div>
+	<div id="ConfigCredential" style="background-color:ghostwhite;height:100%;width:30%;display:inline-block;float:left;">
+	   <h4 id="Accesskey">Input your Credential here:</h4>
+        <p>
+        Access Key:    <br>
+        <input autofocus size="40" type="text" id="accesskey" value=""/><br>
+        Access Secret: <br>
+        <input autofocus size="40" type="text" id="accesssecret" value=""/><br>
+        Region: <br>
+        <input autofocus size="40" type="text" id="region" value=""/><br>
+        AWS key pair Name:<br>
+        <input autofocus size="40" type="text" id="keypair" value=""/><br>
+        <button class="btn default" id="config" onClick="InputCred()">Configure</button>
+        </p>
+        <div id="AccessKey"></div>
+	   <div id="AccessSecret"></div>
+        <div class="card" id="eonoperation">
+        <h4>Input below required parameters:</h4>
+            
+        <p>
+        Communal Storage:<br>
+        <input autofocus size="40" type="text" id="s3bucket" value=""/><br>
+        Veritca rpm path:<br>
+        <input autofocus size="40" type="text" id="verticarpm" value=""/><br>
+        <button type="button" id="buildeon" onclick="createeon()">buildeon</button>
+        <button type="button" id="destroyeon" onclick="destroyeon()">destroyeon</button>
+        <button type="button" id="destroyeon" onclick="AppendLink()">test</button>
+        </p>
+        <p style="color:red;">Notice: please provide the parameter then build the eon!</p>
+        </div>
+    </div>
+    <div class="card" id="instancestate" style="background-color:#EEEEEE;height:100%;width:70%;display: inline-block;float:left;">
+        <div class="state" id="eonstate" style="background-color:#EEEEEE;height:30px;float:top;border-bottom: 2px solid black">CurrentState: </div>
+        <div style="margin: 2px 0 0 0;">
+            <button type="button" id="describe" onclick="describeInstances()">ShowCurrentInstanceState</button>
+            <button type="button" id="terminate" onclick="TerminateInstances()">TerminateAllInstances</button>
+            <table id="instancelist">
+                <tr><th>LaunchTime</th><th>InstanceId</th><th>PublicIpAddress</th><th>PrivateIpAddress</th><th>State</th></tr>
+            </table>  
+        </div>
+    </div>
+
+</body>
+<script type="text/javascript">
+t = document.getElementById("instancelist"); 
+document.getElementById("eonstate").innerText = "CurrentState: " + state.INITIAL;
+//InputCred();
+//describeInstances();
+</script>
+
+</html>

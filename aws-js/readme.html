@@ -8,15 +8,50 @@
             <h2 id='toolname' style="color: white">EON Building Tool</h3>
         </div>
         <div class="topnav">
-            <a href="test.html">MAINPAGE</a>
+            <a href="index.html">TOOL</a>
             <a href="readme.html">README</a>
             <a href="https://www.vertica.com/documentation/vertica/10-0-x-documentation/" style="float:right">VERTICA</a>
         </div>
         <div class="helpcontent">
-            <h1>Help docs</h1>
+            <h1>Prepare your AWS</h1>
+            <h2>Create your AWS Account</h2>
+            <p>
+            AWS provide you 12 Month Free Tier, which include t2.micro type EC2 instance 750 hours per month. 5GB on Amazon S3 service. For more details , please read below link.<br>
+            <a href="https://aws.amazon.com/free/">AWS Free Tier</a><br>
+            <b style="color:red">Note: This Tool will only build the resource within the AWS Free Tier. Please be aware of the AWS Free Tier Limitation.</b>
+            </p>
+            <h2>Create a keypair</h2>
+            <p>
+            1. Login to your AWS account.<br>
+            2. Switch to EC2 Service.<br>
+            3. Select the Key Pairs in the left menu.<br>
+            4. Input the keypair name and create a keypair.<br>
+            <b style="color:red">Note: You have only one chance to keep the key file.</b><br>
+            <b style="color:red">Note: The key pairs could only be used with the resource in same region.</b>
+            </p>
+            <h2>Create S3 bucket for Communal Storage</h2>
+            <p>
+            1. Login to your AWS account.<br>
+            2. Switch to S3 Service.<br>
+            3. Create a S3 bucket with a unique name and select the region that you would like to build your EON.<br>
+            </p>
+            <h2>Upload the vertica rpm package</h2>
+            <p>
+            1. Login to your AWS account.<br>
+            2. Switch to S3 Service.<br>
+            3. Choose an existing S3 bucket in the same region with EON.<br>
+            4. Upload the rpm to the S3 bucket and copy the object path.<br>
+            </p>
+            <h2>About this tool</h2>
+            <p>
+            1.You will need access key, access secret and region to check the instance status.<br>
+            2.After all parameter provided , you then you will be able to build the eon environment.<br>
+            </p>
+            <h2 style="color:red">IMPORTANT</h2>
+            <p style="color:red">
+            Destroy the built eon test environmnet will not empty the Communal Storage, you may need to emtpy the S3 bucket manually.<br>
+            This Tool is based on JS which may need webpage open to run the script, and you could open the developer tools to check the console log.<br>
+            </p>    
         </div>
     </body>
-    <script>
-        var address = "http://www.baidu.com";
-    </script>
 </html>

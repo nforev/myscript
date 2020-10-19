@@ -7,21 +7,6 @@ function AwsConfig() {
 	AWS.config.update({region: Config.region});    
 }
 
-function creates3bucket() {
-    s3 = new AWS.S3({apiVersion: '2006-03-01'});
-    var bucketParams = {
-        Bucket : 'mybucket-zheng-20191223',
-    };
-    
-    // Call S3 to obtain a list of the objects in the bucket
-    s3.listObjects(bucketParams, function(err, data) {
-        if (err) {
-            console.log("Error", err);
-        } else {
-            console.log("Success", data);
-        }
-    });
-}
 
 function describeInstances() {
 	//var creds = new AWS.Credentials({
@@ -123,13 +108,12 @@ function CreateInstance() {
     var userDataEncoded = btoa(userData);
     // AMI is amzn-ami-2011.09.1.x86_64-ebs
     var instanceParams = {
-        ImageId: 'ami-01288945bd24ed49a', 
+        ImageId: Config.amiid, 
         //ImageId: 'ami-05dbc2395794a5a52', 
         InstanceType: 't2.micro',
-        KeyName: 'home_key_seoul',
+        KeyName: Config.keypair,
         MinCount: 1,
         MaxCount: 1,
-        SecurityGroupIds: ["sg-e6c67b86"],
         UserData: userDataEncoded,
     };
     
@@ -208,9 +192,28 @@ function detecteon() {
             if (json.Vpcs.length != 0) {
                 alert("Detect eon vpc existing , the buildeon button will be disabled!")
                 $("#buildeon").attr("disabled", true);
+                document.getElementById("eonstate").innerText = "CurrentState: " + state.EON_EXIST;
             } else {
                 console.log("No eon vpc detected");
+                document.getElementById("eonstate").innerText = "CurrentState: " + state.NO_EON;
             }
+        }
+    });
+}
+
+function generate_log_link() {
+    var ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
+    var params = {
+	   InstanceIds: [vertica01_insid]
+	};
+    ec2.describeInstances(params, function (err, data) {
+        if (err) {
+            console.log("Error", err.stack);
+            InvalidCrendentialHandler();
+        } else {
+            console.log("Success");
+            var json = JSON.parse(JSON.stringify(data));
+            console.log(json.Reservations[0].instances[0].PublicIpAddress);
         }
     });
 }

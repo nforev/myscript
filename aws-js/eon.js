@@ -1,6 +1,8 @@
 var subnetid = '';
 var vpcid = '';
 var sgid = '';
+var vertica01_insid = '';
+var logurl = '';
 
    
 
@@ -23,12 +25,20 @@ function createeoninstance() {
         sudo echo "10.100.1.13 vertica03" >> /etc/hosts;
         sudo echo "dbadmin ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
         `;
+    var buildhttp = `
+        yum install -y httpd;
+        sudo systemctl start httpd;
+        sudo systemctl enable httpd;
+        echo "++++++++++++++++++++++S3 CLEAN LOG++++++++++++++++++++++++++" >> /var/www/html/install.log;
+        `
     var part2 = `
         sleep 10;
         sudo rpm -Uvh /tmp/vertica*.rpm;
         sleep 30;
-        echo vertica123 | su - dbadmin -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user dbadmin --dba-user-password password --ssh-password vertica123 --license CE --accept-eula" > /tmp/verticainstall/install_cluster.log;
+        echo "++++++++++++++++++++++CLUSTER INSTALLATION+++++++++++++++++++++" >> /var/www/html/install.log;
+        echo vertica123 | su - dbadmin -c "sudo /opt/vertica/sbin/install_vertica --hosts vertica01,vertica02,vertica03 --failure-threshold NONE -T --dba-user dbadmin --dba-user-password password --ssh-password vertica123 --license CE --accept-eula" >> /var/www/html/install.log;
         sleep 10;
+        echo "++++++++++++++++++++++VERTICA INSTALLATION+++++++++++++++++++++" >> /var/www/html/install.log;
         `;
     var part3 = `
         sleep 10;
@@ -38,9 +48,9 @@ function createeoninstance() {
     
     var s3cmd = "sudo aws s3 cp " + s3param.verticarpm + " /tmp/;"
     var cleans3 = "sudo aws s3 rm " + s3param.s3bucket + " --recursive > /tmp/verticainstall/rm_s3.log;"
-    var installvertica = 'echo vertica123 | su - dbadmin -c "admintools -t create_db --communal-storage-location=' + s3param.s3bucket + ' -s vertica01,vertica02,vertica03 -d test_eon -p password --depot-path /home/dbadmin/ --shard-count=6" > /tmp/verticainstall/install_vertica.log;'
+    var installvertica = 'echo vertica123 | su - dbadmin -c "admintools -t create_db --communal-storage-location=' + s3param.s3bucket + ' -s vertica01,vertica02,vertica03 -d test_eon -p password --depot-path /home/dbadmin/ --shard-count=6" >> /var/www/html/install.log;'
     
-    var verticauserData1=part1 + cleans3 + s3cmd + part2 + installvertica;
+    var verticauserData1=part1 + buildhttp + cleans3 + s3cmd + part2 + installvertica;
     var verticauserData2=part1 + s3cmd + part3;
     var verticauserDataEncoded1 = btoa(verticauserData1);
     var verticauserDataEncoded2 = btoa(verticauserData2);
@@ -137,8 +147,11 @@ function createeoninstance() {
     instancePromise1.then(
         function(data) {
             console.log(data);
-            var instanceId = data.Instances[0].InstanceId;
-            console.log("Created instance", instanceId);
+            vertica01_insid = data.Instances[0].InstanceId;
+            console.log("Created instance", vertica01_insid);
+            //vertica01 = data.Instances[0].PublicIpAddress;
+            //logurl = "http://" + vertica01 + "/install.log";
+            //console.log(logurl);
         }).catch(
         function(err) {
             console.error(err, err.stack);
@@ -247,8 +260,10 @@ function createRoleFors3() {
         RoleName: "rolefors3access"
     }
     iam.createInstanceProfile(paramip, function (err, dataip) {
-        if (err) console.log(err, err.stack); // an error occurred
-        else
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+            InvalidCrendentialHandler();
+        } else {
             console.log("Create instance profile");           // successful response
             iam.createRole(createParams, function (err, data) {
                 if (err) {
@@ -269,6 +284,7 @@ function createRoleFors3() {
 
                 }
             });
+        }
     });
 
 }
@@ -393,12 +409,20 @@ function deletesg() {
 }
 
 async function createeon() {
-    $("#buildeon").attr("disabled", true);
-    Config.keypair=document.getElementById("keypair").value;
-    createRoleFors3();
-    await sleep(10000);
-    buildeon();
-    await sleep(1000);
+    s3param.s3bucket = document.getElementById("s3bucket").value;
+    s3param.verticarpm = document.getElementById("verticarpm").value;
+    if (validate_s3parameter(s3param.s3bucket)&&validate_s3parameter(s3param.verticarpm)) {
+        $("#buildeon").attr("disabled", true);
+        document.getElementById("eonstate").innerText = "CurrentState: " + state.BUILDING;
+        createRoleFors3();
+        await sleep(10000);
+        buildeon();
+        await sleep(300000);
+        generate_log_link();
+        document.getElementById("eonstate").innerText = "CurrentState: " + state.BUILDING_DONE;
+    } else {
+        alert("Please input correct S3 parameter.");
+    }
 }
 
 function buildeon() {
@@ -622,39 +646,17 @@ function destroyvpc() {
                                             $("#destroyeon").attr("disabled",false);
                                             $("#buildeon").attr("disabled", false);
                                             alert("The eon environment has been removed!")
+                                            document.getElementById("eonstate").innerText = "CurrentState: " + state.DESTROYING_DONE;
                                         });
                                 });
                         });
                     });
             });    
     });
-    
-    //3. remove rb
-    //4. dettach igw
-    //5. remove igw
-    //6. remove vpc
-
-    
-    //ec2.describeVpcs(paramlistvpc, function(err, datalistvpc) {
-    //    if (err) console.log(err, err.stack); // an error occurred
-    //    else     
-    //        json=JSON.parse(JSON.stringify(datalistvpc));
-    //        console.log("get vpc id.");
-    //        console.log(json.Vpcs[0].VpcId);
-    //        var vpcid = json.Vpcs[0].VpcId;
-    //        var paramdeletevpc={
-    //            VpcId: vpcid
-    //        };
-    //        ec2.deleteVpc(paramdeletevpc, function(err, data) {
-    //            if (err) console.log(err, err.stack);
-    //            else console.log("vpc deleted");
-    //        });
-    //});
-
 }
 
 async function waitinginstanceterminated() {
-    alert("Please do not close this page, until next pop up messsage!")
+    alert("Click OK will start to release all EON resource. Please do not close this webpage, until next pop up messsage!")
     await sleep(60000);
     deletesg();
     await sleep(5000);
@@ -669,6 +671,7 @@ function sleep(ms) {
 
 function destroyeon() {
     $("#destroyeon").attr("disabled",true);
+    document.getElementById("eonstate").innerText = "CurrentState: " + state.DESTROYING;
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
     
     var param1 = {
