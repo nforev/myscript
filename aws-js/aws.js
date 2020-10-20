@@ -213,7 +213,12 @@ function generate_log_link() {
         } else {
             console.log("Success");
             var json = JSON.parse(JSON.stringify(data));
-            console.log(json.Reservations[0].instances[0].PublicIpAddress);
+            for (var i in json.Reservations) {
+                instances = json.Reservations[i].Instances;
+                var vertica01pubip = instances[0].PublicIpAddress;
+                logurl = "http://" + vertica01pubip + "/install.log";
+                AppendLink(logurl);
+            }
         }
     });
 }

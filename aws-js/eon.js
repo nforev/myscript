@@ -417,8 +417,9 @@ async function createeon() {
         createRoleFors3();
         await sleep(10000);
         buildeon();
-        await sleep(300000);
+        await sleep(30000);
         generate_log_link();
+        await sleep(200000);
         document.getElementById("eonstate").innerText = "CurrentState: " + state.BUILDING_DONE;
     } else {
         alert("Please input correct S3 parameter.");
