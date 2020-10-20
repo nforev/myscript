@@ -20,9 +20,25 @@
             <a href="https://aws.amazon.com/free/">AWS Free Tier</a><br>
             <b style="color:red">Note: This Tool will only build the resource within the AWS Free Tier. Please be aware of the AWS Free Tier Limitation.</b>
             </p>
+            <h2>Create your Access Key/Secret</h2>
+            <p>
+            1. Login your AWS account.<br>
+            2. Swith to IAM service.<br>
+            3. Change to User Page. <br>
+            4. Click Add user to create a new user. <br>
+            5. Set user name, and choose the access type as Programmatic access. <br>
+            6. In Set Permissions Section , choose "Attach existing policies directly". And select below policies:
+                <li>AmazonEC2FullAccess</li>
+                <li>AmazonS3FullAccess</li>
+                <li>AmazonVPCFullAccess</li>
+                <li>IAMFullAccess</li><br>
+            7. Create a tag if you like.(Optional)<br>
+            8. After review the configured item, confirm to create the new user. <br>
+			9. Keep the Access Key and Access Secret string, which will only display once.<br>
+            </p>
             <h2>Create a keypair</h2>
             <p>
-            1. Login to your AWS account.<br>
+            1. Login your AWS account.<br>
             2. Switch to EC2 Service.<br>
             3. Select the Key Pairs in the left menu.<br>
             4. Input the keypair name and create a keypair.<br>
@@ -31,13 +47,14 @@
             </p>
             <h2>Create S3 bucket for Communal Storage</h2>
             <p>
-            1. Login to your AWS account.<br>
+            1. Login your AWS account.<br>
             2. Switch to S3 Service.<br>
             3. Create a S3 bucket with a unique name and select the region that you would like to build your EON.<br>
+            <b style="color:red">Note: The bucket/folder for communal storage will be empty by the script.</b><br>
             </p>
             <h2>Upload the vertica rpm package</h2>
             <p>
-            1. Login to your AWS account.<br>
+            1. Login your AWS account.<br>
             2. Switch to S3 Service.<br>
             3. Choose an existing S3 bucket in the same region with EON.<br>
             4. Upload the rpm to the S3 bucket and copy the object path.<br>
